@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { ModelosCertificado } from './entities/modelos-certificado.entity';
 import { CreateModelosCertificadoDto } from './dto/create-modelos-certificado.dto';
 import { UpdateModelosCertificadoDto } from './dto/update-modelos-certificado.dto';
@@ -17,8 +17,15 @@ export class ModelosCertificadosService {
     return this.modeloRepo.save(modelo);
   }
 
-  findAll() {
-    return this.modeloRepo.find({ order: { id_modelo: 'DESC' } });
+  findAll(search?: string, estado?: string) {
+    const where: any = {};
+    if (estado) where.estado = estado;
+    if (search) where.nombre = ILike(`%${search}%`);
+
+    return this.modeloRepo.find({
+      where,
+      order: { id_modelo: 'DESC' },
+    });
   }
 
   async findOne(id: number) {

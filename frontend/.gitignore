@@ -1,6 +1,7 @@
 # Environment files (Back & Front)
 .env
 .env.*
+
 !.env.example
 
 # Dependencies
@@ -10,6 +11,10 @@ node_modules/
 dist/
 build/
 .next/
+
+# Uploads & Media (Archivos subidos por usuarios)
+uploads/
+**/uploads/
 
 # Logs
 logs

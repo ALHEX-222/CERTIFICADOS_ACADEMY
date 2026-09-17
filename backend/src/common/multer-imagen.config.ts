@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import * as fs from 'fs';
 
-const uploadPath = join(process.cwd(), 'uploads', 'modelos-certificados');
+const uploadPath = join(process.cwd(), 'uploads', 'modelos');
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }

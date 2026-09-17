@@ -14,16 +14,20 @@ export class ModelosCertificado {
   @Column({ length: 150 })
   nombre: string;
 
-  @Column({ length: 255 })
-  url_imagen: string;
+  @Column({ type: 'text', nullable: true })
+  descripcion: string;
+
+  @Column({ length: 255, nullable: true })
+  imagen: string;
 
   @Column({ length: 20, default: 'horizontal' })
   orientacion: string;
 
+  // Posiciones de cada campo de texto sobre la imagen (para cuando se genere el PDF)
   @Column({ type: 'json', nullable: true })
   campos_config: Record<string, any>[];
 
-  @Column({ length: 20, default: 'Activo' })
+  @Column({ length: 20, default: 'activo' })
   estado: string;
 
   @CreateDateColumn()

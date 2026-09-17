@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import InputComponent from '../components/InputComponent';
 import TextareaComponent from '../components/TextareaComponent';
 import SelectComponent from '../components/SelectComponent';
 import AdminModal from '../components/AdminModal';
-import { FaCloudUploadAlt, FaTimes } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTimes, FaExclamationCircle } from 'react-icons/fa';
 import { apiClient } from '../../services/apiClient';
-import { API_URL } from '../../config/api';
+import { resolveAvatarUrl } from '../../config/api';
 
 interface EditModeloCertificadoModalProps {
   isOpen: boolean;
@@ -15,6 +15,9 @@ interface EditModeloCertificadoModalProps {
   modelo: any;
   onSave: (data: any) => Promise<boolean>;
 }
+
+const MAX_FILE_SIZE_MB = 5;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProps> = ({
   isOpen,
@@ -30,9 +33,13 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
   const [imagenOriginal, setImagenOriginal] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imagenError, setImagenError] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const inputFileRef = useRef<HTMLInputElement>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     if (isOpen && modelo) {
@@ -43,6 +50,8 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
       setImagenOriginal(modelo.imagen || null);
       setSelectedFile(null);
       setPreviewUrl(null);
+      setImagenError(false);
+      setFileError(null);
     }
   }, [isOpen, modelo]);
 
@@ -52,15 +61,44 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
     };
   }, [previewUrl]);
 
+  const validarArchivo = (file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return 'Formato no permitido. Usa JPG, PNG o WEBP.';
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      return `El archivo supera el tamaño máximo de ${MAX_FILE_SIZE_MB}MB.`;
+    }
+    return null;
+  };
+
+  const procesarArchivo = useCallback(
+    (file: File | undefined) => {
+      if (!file) return;
+
+      const error = validarArchivo(file);
+      if (error) {
+        setFileError(error);
+        return;
+      }
+
+      setFileError(null);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setImagenError(false);
+    },
+    [previewUrl],
+  );
+
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-
+    procesarArchivo(e.target.files?.[0]);
     if (inputFileRef.current) inputFileRef.current.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    procesarArchivo(e.dataTransfer.files?.[0]);
   };
 
   const quitarImagen = () => {
@@ -68,15 +106,11 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
     setSelectedFile(null);
     setPreviewUrl(null);
     setImagenExistente(null);
+    setImagenError(false);
+    setFileError(null);
   };
 
-  const imagenAMostrar = previewUrl
-    ? previewUrl
-    : imagenExistente
-      ? imagenExistente.startsWith('http')
-        ? imagenExistente
-        : `${API_URL}/${imagenExistente.replace(/^\/?(api\/)?/, '')}`
-      : null;
+  const imagenAMostrar = previewUrl || (imagenExistente ? resolveAvatarUrl(imagenExistente) : null);
 
   const eliminarImagenAnterior = async (rutaImagenAnterior: string) => {
     try {
@@ -90,22 +124,22 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
 
   const handleSave = async () => {
     if (!nombre.trim()) return alert('El nombre del modelo es obligatorio.');
+    if (fileError) return;
 
     setIsSaving(true);
+    let imagenSubida: string | null = null;
+
     try {
       let imagen: string | undefined = imagenExistente || undefined;
 
       if (selectedFile) {
+        setIsUploadingImage(true);
         const formData = new FormData();
         formData.append('imagen', selectedFile);
         const res = await apiClient.post('/admin/modelos-certificados/upload', formData);
         imagen = res.data.url;
-
-        if (imagenOriginal && imagenOriginal !== imagen) {
-          await eliminarImagenAnterior(imagenOriginal);
-        }
-      } else if (imagenOriginal && !imagenExistente) {
-        await eliminarImagenAnterior(imagenOriginal);
+        imagenSubida = imagen ?? null;
+        setIsUploadingImage(false);
       }
 
       const data = {
@@ -116,12 +150,28 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
       };
 
       const fueExitosa = await onSave(data);
-      if (fueExitosa) onClose();
+
+      if (fueExitosa) {
+        // Solo borramos la imagen vieja del storage si el guardado fue exitoso
+        if (selectedFile && imagenOriginal && imagenOriginal !== imagen) {
+          await eliminarImagenAnterior(imagenOriginal);
+        } else if (imagenOriginal && !imagenExistente && !selectedFile) {
+          await eliminarImagenAnterior(imagenOriginal);
+        }
+        onClose();
+      } else if (imagenSubida) {
+        // El guardado falló pero ya subimos una imagen nueva: la limpiamos para no dejarla huérfana
+        await eliminarImagenAnterior(imagenSubida);
+      }
     } catch (error) {
       console.error('Error al guardar el modelo de certificado:', error);
+      if (imagenSubida) {
+        await eliminarImagenAnterior(imagenSubida);
+      }
       alert('Ocurrió un error al subir la imagen o guardar los cambios.');
     } finally {
       setIsSaving(false);
+      setIsUploadingImage(false);
     }
   };
 
@@ -146,13 +196,13 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
 
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !!fileError}
             className="w-full md:w-auto bg-gradient-to-br from-[#0E1C2B] to-[#1a3a5a] text-white px-10 py-4 rounded-2xl font-black tracking-tight hover:shadow-2xl hover:shadow-sky-900/20 transition-all active:scale-95 flex items-center justify-center gap-2 border border-white/5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Guardando...
+                {isUploadingImage ? 'Subiendo imagen...' : 'Guardando...'}
               </>
             ) : (
               'Guardar Cambios'
@@ -193,12 +243,13 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
               Plantilla del Certificado
             </label>
 
-            {imagenAMostrar ? (
+            {imagenAMostrar && !imagenError ? (
               <div className="relative w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm group">
                 <img
                   src={imagenAMostrar}
                   alt="Vista previa"
                   className="w-full h-64 lg:h-full object-cover"
+                  onError={() => setImagenError(true)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <button
@@ -216,7 +267,19 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
                 )}
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-64 lg:h-full min-h-[220px] border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-sky-400 hover:bg-sky-50/30 transition-all bg-slate-50/50">
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`flex flex-col items-center justify-center w-full h-64 lg:h-full min-h-[220px] border-2 border-dashed rounded-2xl cursor-pointer transition-all bg-slate-50/50 ${
+                  isDragging
+                    ? 'border-sky-500 bg-sky-50/60'
+                    : 'border-gray-200 hover:border-sky-400 hover:bg-sky-50/30'
+                }`}
+              >
                 <input
                   ref={inputFileRef}
                   type="file"
@@ -228,10 +291,19 @@ export const EditModeloCertificadoModal: React.FC<EditModeloCertificadoModalProp
                   <FaCloudUploadAlt size={24} />
                 </div>
                 <span className="text-xs font-black text-gray-500 uppercase tracking-wide">
-                  Subir plantilla
+                  {imagenError ? 'Imagen no disponible — subir nueva' : 'Subir plantilla'}
                 </span>
-                <span className="text-[10px] text-gray-400 mt-1">JPG, PNG o WEBP</span>
+                <span className="text-[10px] text-gray-400 mt-1">
+                  JPG, PNG o WEBP · máx. {MAX_FILE_SIZE_MB}MB
+                </span>
               </label>
+            )}
+
+            {fileError && (
+              <div className="mt-2 flex items-center gap-2 text-rose-500 text-[11px] font-bold">
+                <FaExclamationCircle size={12} />
+                {fileError}
+              </div>
             )}
           </div>
         </div>

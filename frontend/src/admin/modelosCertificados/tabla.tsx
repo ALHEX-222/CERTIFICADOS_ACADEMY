@@ -6,14 +6,8 @@ import { AgregarModeloCertificadoModal } from './agregarModeloCertificados';
 import { EditModeloCertificadoModal } from './editModeloCertificados';
 import DeleteModal from '../components/DeleteModal';
 import { apiClient } from '../../services/apiClient';
-import { API_URL } from '../../config/api';
+import { resolveAvatarUrl } from '../../config/api';
 import { useToast } from '../../hooks/useToast';
-
-function resolverImagenUrl(imagen: string | null | undefined): string | null {
-  if (!imagen) return null;
-  if (imagen.startsWith('http')) return imagen;
-  return `${API_URL}/${imagen.replace(/^\/?(api\/)?/, '')}`;
-}
 
 function formatearFecha(fecha: string | null | undefined): string {
   if (!fecha) return '—';
@@ -185,7 +179,7 @@ export default function ModelosCertificados() {
               </tr>
             ) : (
               modelos.map((m) => {
-                const imagenSrc = resolverImagenUrl(m.imagen);
+                const imagenSrc = resolveAvatarUrl(m.imagen);
                 return (
                   <tr key={m.id_modelo} className="hover:bg-slate-50/50 transition-all">
                     <td className="px-8 py-6">
@@ -197,7 +191,9 @@ export default function ModelosCertificados() {
                               alt={m.nombre}
                               className="w-full h-full object-cover"
                               onError={(ev) => {
-                                (ev.target as HTMLImageElement).style.display = 'none';
+                                const target = ev.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = '/placeholder.jpg';
                               }}
                             />
                           ) : (

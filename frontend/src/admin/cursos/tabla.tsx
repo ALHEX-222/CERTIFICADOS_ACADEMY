@@ -87,13 +87,8 @@ function FiltroEstado({
   );
 }
 
-interface CursosProps {
-  rol: number | null;
-}
-
-export function Cursos({ rol }: CursosProps) {
+export function Cursos() {
   const { showToast } = useToast();
-  const esAdministrador = rol === 1;
 
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -260,15 +255,13 @@ export function Cursos({ rol }: CursosProps) {
         <div className="flex items-center gap-3">
           <FiltroEstado value={filtroEstado} onChange={setFiltroEstado} />
 
-          {esAdministrador && (
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-gradient-to-br from-[#0E1C2B] to-[#1a3a5a] text-white px-6 py-3 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] hover:shadow-xl hover:shadow-slate-900/20 transition-all active:scale-95 border border-white/5 shadow-md flex items-center gap-2 group whitespace-nowrap"
-            >
-              <FaPlus size={14} className="group-hover:rotate-90 transition-transform duration-300" />{' '}
-              Nuevo Curso
-            </button>
-          )}
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-gradient-to-br from-[#0E1C2B] to-[#1a3a5a] text-white px-6 py-3 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] hover:shadow-xl hover:shadow-slate-900/20 transition-all active:scale-95 border border-white/5 shadow-md flex items-center gap-2 group whitespace-nowrap"
+          >
+            <FaPlus size={14} className="group-hover:rotate-90 transition-transform duration-300" />{' '}
+            Nuevo Curso
+          </button>
         </div>
       </div>
 
@@ -381,34 +374,32 @@ export function Cursos({ rol }: CursosProps) {
                         >
                           <FaInfoCircle size={16} className="hover:scale-110 transition-transform" />
                         </button>
-                        {esAdministrador && (
-                          <button
-                            onClick={() => {
-                              setCursoAEliminar(curso);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-all duration-300"
-                            title="Eliminar"
+                        <button
+                          onClick={() => {
+                            setCursoAEliminar(curso);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-all duration-300"
+                          title="Eliminar"
+                        >
+                          <svg
+                            stroke="currentColor"
+                            fill="none"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            height="16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="hover:scale-110 transition-transform"
                           >
-                            <svg
-                              stroke="currentColor"
-                              fill="none"
-                              strokeWidth="2.5"
-                              viewBox="0 0 24 24"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              height="16"
-                              width="16"
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="hover:scale-110 transition-transform"
-                            >
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                          </button>
-                        )}
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -487,20 +478,18 @@ export function Cursos({ rol }: CursosProps) {
                   >
                     <FaInfoCircle size={14} />
                   </button>
-                  {esAdministrador && (
-                    <button
-                      onClick={() => {
-                        setCursoAEliminar(curso);
-                        setIsDeleteModalOpen(true);
-                      }}
-                      className="p-2 text-rose-500 bg-rose-50 rounded-lg"
-                    >
-                      <svg stroke="currentColor" fill="none" strokeWidth="2.5" viewBox="0 0 24 24" height="14" width="14">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setCursoAEliminar(curso);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="p-2 text-rose-500 bg-rose-50 rounded-lg"
+                  >
+                    <svg stroke="currentColor" fill="none" strokeWidth="2.5" viewBox="0 0 24 24" height="14" width="14">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
             ))
@@ -535,13 +524,11 @@ export function Cursos({ rol }: CursosProps) {
         onClose={() => setModalAbierto(false)}
         curso={cursoSeleccionado}
       />
-      {esAdministrador && (
-        <AddCursoModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSave={crearCurso}
-        />
-      )}
+      <AddCursoModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={crearCurso}
+      />
       {cursoAEditar && isEditModalOpen && (
         <EditCursoModal
           isOpen={isEditModalOpen}
@@ -560,17 +547,15 @@ export function Cursos({ rol }: CursosProps) {
         itemName={cursoEstadoSeleccionado?.nombre || ''}
         nuevoEstado={cursoEstadoSeleccionado?.estado === 'Activo' ? 'Inactivo' : 'Activo'}
       />
-      {esAdministrador && (
-        <DeleteModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setCursoAEliminar(null);
-          }}
-          onConfirm={handleEliminar}
-          itemName={cursoAEliminar?.nombre || ''}
-        />
-      )}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setCursoAEliminar(null);
+        }}
+        onConfirm={handleEliminar}
+        itemName={cursoAEliminar?.nombre || ''}
+      />
     </div>
   );
 }

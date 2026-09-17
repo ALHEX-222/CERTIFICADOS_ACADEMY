@@ -21,5 +21,5 @@ export const resolveAvatarUrl = (imgPath?: string | null): string => {
   if (!imgPath) return '';
   if (/^https?:\/\//i.test(imgPath) || /^(blob:|data:)/i.test(imgPath)) return imgPath;
   const cleanPath = imgPath.replace(/^\/?(api\/)?/, '');
-  return `${API_URL}/${cleanPath}`; 
+  return `${BASE_URL}/${cleanPath}`; // ✅ usa BASE_URL, sin /api
 };

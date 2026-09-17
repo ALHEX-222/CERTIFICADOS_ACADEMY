@@ -225,7 +225,8 @@ export class CertificadosService {
 
   private async obtenerImagenYDimensiones(idModelo: number) {
   const modelo = await this.modelosCertificadosService.findOne(idModelo);
-  const imagePath = join(process.cwd(), 'uploads', modelo.url_imagen);
+  const rutaRelativa = modelo.imagen.replace(/^storage\//, '');
+  const imagePath = join(process.cwd(), 'uploads', rutaRelativa);
   const buffer = readFileSync(imagePath);
   const dimensions = imageSize(buffer);
   return {

@@ -2,42 +2,61 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
-  Patch,
   Param,
   Delete,
+  Query,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
+import * as fs from 'fs';
 import { multerImagenOptions } from '../common/multer-imagen.config';
 import { ModelosCertificadosService } from './modelos-certificados.service';
 import { CreateModelosCertificadoDto } from './dto/create-modelos-certificado.dto';
 import { UpdateModelosCertificadoDto } from './dto/update-modelos-certificado.dto';
 
-@Controller('modelos-certificados')
+@Controller('admin/modelos-certificados')
 export class ModelosCertificadosController {
   constructor(
     private readonly modelosCertificadosService: ModelosCertificadosService,
   ) {}
 
-  @Post()
+  // Sube la imagen y devuelve la ruta a guardar en la BD (con prefijo "storage/")
+  @Post('upload')
   @UseInterceptors(FileInterceptor('imagen', multerImagenOptions))
-  create(
-    @Body() createModelosCertificadoDto: CreateModelosCertificadoDto,
-    @UploadedFile() file?: any,
-  ) {
+  subirImagen(@UploadedFile() file?: any) {
     if (!file) {
-      throw new BadRequestException('La imagen del modelo es obligatoria.');
+      throw new BadRequestException('Debes subir una imagen.');
     }
-    createModelosCertificadoDto.url_imagen = `modelos-certificados/${file.filename}`;
+    return { url: `storage/modelos/${file.filename}` };
+  }
+
+  // Borra el archivo físico de una imagen anterior (al reemplazarla o quitarla)
+  @Delete('imagen')
+  eliminarImagen(@Body('imagen') imagen: string) {
+    if (!imagen) {
+      throw new BadRequestException('Debes indicar la imagen a eliminar.');
+    }
+    const rutaRelativa = imagen.replace(/^storage\//, '');
+    const rutaFisica = join(process.cwd(), 'uploads', rutaRelativa);
+    if (fs.existsSync(rutaFisica)) {
+      fs.unlinkSync(rutaFisica);
+    }
+    return { eliminado: true };
+  }
+
+  @Post()
+  create(@Body() createModelosCertificadoDto: CreateModelosCertificadoDto) {
     return this.modelosCertificadosService.create(createModelosCertificadoDto);
   }
 
   @Get()
-  findAll() {
-    return this.modelosCertificadosService.findAll();
+  findAll(@Query('search') search?: string, @Query('estado') estado?: string) {
+    return this.modelosCertificadosService.findAll(search, estado);
   }
 
   @Get(':id')
@@ -45,16 +64,11 @@ export class ModelosCertificadosController {
     return this.modelosCertificadosService.findOne(+id);
   }
 
-  @Patch(':id')
-  @UseInterceptors(FileInterceptor('imagen', multerImagenOptions))
+  @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateModelosCertificadoDto: UpdateModelosCertificadoDto,
-    @UploadedFile() file?: any,
   ) {
-    if (file) {
-      updateModelosCertificadoDto.url_imagen = `modelos-certificados/${file.filename}`;
-    }
     return this.modelosCertificadosService.update(
       +id,
       updateModelosCertificadoDto,

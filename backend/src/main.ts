@@ -18,7 +18,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'http://localhost:5173', // frontend en desarrollo
+      'http://localhost:5173',
     ],
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -31,9 +31,12 @@ async function bootstrap() {
     ],
   });
 
-  // Sirve la carpeta ./uploads como archivos estáticos, accesibles en /uploads/*
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
+  });
+
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/storage/',
   });
 
   app.setGlobalPrefix('api');

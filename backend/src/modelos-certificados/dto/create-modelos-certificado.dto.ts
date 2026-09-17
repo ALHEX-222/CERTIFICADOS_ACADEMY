@@ -8,7 +8,11 @@ export class CreateModelosCertificadoDto {
 
   @IsString()
   @IsOptional()
-  url_imagen?: string;
+  descripcion?: string;
+
+  @IsString()
+  @IsOptional()
+  imagen?: string;
 
   @IsString()
   @IsOptional()
