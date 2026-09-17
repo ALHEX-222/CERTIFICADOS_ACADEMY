@@ -42,8 +42,19 @@ export class CertificadosService {
     return this.certificadoRepo.save(certificado);
   }
 
-  findAll() {
-    return this.certificadoRepo.find({ order: { id_certificado: 'DESC' } });
+    async findAll() {
+
+    const certificados = await this.certificadoRepo.find({
+      order: {
+        id_certificado: 'DESC',
+      },
+    });
+
+    return {
+      data: certificados,
+      total: certificados.length,
+      lastPage: 1,
+    };
   }
 
   async findOne(id: number) {
