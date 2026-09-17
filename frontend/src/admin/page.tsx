@@ -23,6 +23,15 @@ import ModelosCertificados from '././modelosCertificados/tabla';
 
 type SeccionAdmin = 'cursos' | 'certificados' | 'estudiantes' | 'modelos-certificados';
 
+interface Usuario {
+  id_usuario: number;
+  nombre: string;
+  apellido?: string;
+  email: string;
+  id_rol: number;
+  imagen_perfil?: string;
+}
+
 const MENU_ITEMS: { key: SeccionAdmin; label: string; icon: typeof BookOpen }[] = [
   { key: 'cursos', label: 'Cursos', icon: BookOpen },
   { key: 'certificados', label: 'Certificados', icon: Award },
@@ -36,8 +45,30 @@ export default function AdminLayout() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
-  const [rol, setRol] = useState<number | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<Usuario | null>(() => {
+    const stored = localStorage.getItem('user');
+
+    if (!stored) return null;
+
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  });
+
+  const [rol, setRol] = useState<number | null>(() => {
+    const stored = localStorage.getItem('user');
+
+    if (!stored) return null;
+
+    try {
+      const user = JSON.parse(stored);
+      return Number(user.id_rol || user.user?.id_rol || null);
+    } catch {
+      return null;
+    }
+  });
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,29 +129,23 @@ export default function AdminLayout() {
       return;
     }
 
-    apiClient
-      .get('/auth/profile')
-      .then((res) => {
-        const p = res.data;
+    try {
+      const user = JSON.parse(userStored);
 
-        const userRole = p.id_rol || p.user?.id_rol || 3;
+      setUserData(user);
+      setRol(Number(user.id_rol || user.user?.id_rol || null));
 
-        setRol(userRole);
-        setUserData(p.user || p);
+      const currentTab = searchParams.get('tab');
 
-        const currentTab = searchParams.get('tab');
+      if (!currentTab) {
+        setActiveSection('cursos');
+      }
 
-        if (!currentTab) {
-          setActiveSection('cursos');
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching profile in AdminLayout:', err);
-
-        if (!activeSection) {
-          setActiveSection('cursos');
-        }
-      });
+    } catch (error) {
+      console.error('Error leyendo usuario almacenado:', error);
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -176,6 +201,18 @@ export default function AdminLayout() {
         return <Cursos rol={rol} />;
     }
   };
+
+  const nombreUsuario =
+    userData?.nombre ||
+    'Usuario';
+
+  const rolUsuario = Number(
+  userData?.id_rol ||
+  userData?.user?.id_rol ||
+  3
+);
+
+  const nombreCorto = nombreUsuario.split(' ')[0] || 'Usuario';
 
   const menuItemClass = (section: SeccionAdmin) => {
     const isActive = activeSection === section;
@@ -373,11 +410,11 @@ export default function AdminLayout() {
                   {showLabels && (
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-[13px] font-black truncate text-white tracking-tight leading-tight">
-                        {userData?.nombre?.split(' ')[0] || 'Admin'}
+                        {nombreCorto}
                       </span>
 
                       <span className="text-[9px] text-sky-400 font-black uppercase tracking-[0.2em] mt-0.5">
-                        {rol === 1 ? 'Administrador' : rol === 2 ? 'Coach' : 'Staff'}
+                        {rolUsuario === 1 ? 'Administrador' : rolUsuario === 2 ? 'Coach' : 'Staff'}
                       </span>
                     </div>
                   )}
@@ -448,7 +485,7 @@ export default function AdminLayout() {
           <div className="flex items-center gap-6">
             <div className="hidden md:flex flex-col items-end">
               <span className="text-xs font-black text-slate-900 tracking-tight">
-                Hola, {userData?.nombre?.split(' ')[0]} 👋
+                Hola, {nombreCorto} 👋
               </span>
 
               <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">
