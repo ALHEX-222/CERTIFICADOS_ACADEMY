@@ -37,10 +37,21 @@ export class ModelosCertificadosService {
   }
 
   async update(id: number, dto: UpdateModelosCertificadoDto) {
-    const modelo = await this.findOne(id);
-    Object.assign(modelo, dto);
-    return this.modeloRepo.save(modelo);
+  const modelo = await this.findOne(id);
+
+  if (dto.nombre !== undefined) modelo.nombre = dto.nombre;
+  if (dto.descripcion !== undefined) modelo.descripcion = dto.descripcion;
+  if (dto.imagen !== undefined) modelo.imagen = dto.imagen;
+  if (dto.orientacion !== undefined) modelo.orientacion = dto.orientacion;
+  if (dto.estado !== undefined) modelo.estado = dto.estado;
+
+  // Importante: asignar el array nuevo para que TypeORM detecte el cambio en la columna JSON
+  if (dto.campos_config !== undefined) {
+    modelo.campos_config = dto.campos_config;
   }
+
+  return this.modeloRepo.save(modelo);
+}
 
   async remove(id: number) {
     const modelo = await this.findOne(id);

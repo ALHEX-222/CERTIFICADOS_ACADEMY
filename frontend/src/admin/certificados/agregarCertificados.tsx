@@ -13,12 +13,14 @@ type NuevoCertificadoPayload = {
   nombre_estudiante?: string;
   dni_estudiante?: string;
   id_curso: number;
+  codigo_certificado: string;
   tipo_certificado?: string;
   descripcion?: string;
   horas?: number;
   fecha_inicio?: string;
   fecha_fin?: string;
   fecha_emision?: string;
+  fecha_vencimiento?: string;
   calificacion_final?: number;
   email_destinatario?: string;
 };
@@ -42,6 +44,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
   const [nombreEstudiante, setNombreEstudiante] = useState('');
   const [dniEstudiante, setDniEstudiante] = useState('');
 
+  const [codigoCertificado, setCodigoCertificado] = useState('');
   const [idCurso, setIdCurso] = useState<number | ''>('');
   const [tipoCertificado, setTipoCertificado] = useState('Certificado de Aprobación');
   const [descripcion, setDescripcion] = useState('');
@@ -49,6 +52,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [fechaEmision, setFechaEmision] = useState('');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
   const [calificacionFinal, setCalificacionFinal] = useState<number | ''>('');
   const [emailDestinatario, setEmailDestinatario] = useState('');
 
@@ -58,6 +62,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
     setSelectedEstudianteId('');
     setNombreEstudiante('');
     setDniEstudiante('');
+    setCodigoCertificado('');
     setIdCurso('');
     setTipoCertificado('Certificado de Aprobación');
     setDescripcion('');
@@ -65,6 +70,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
     setFechaInicio('');
     setFechaFin('');
     setFechaEmision('');
+    setFechaVencimiento('');
     setCalificacionFinal('');
     setEmailDestinatario('');
     setError(null);
@@ -92,6 +98,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
   const handleSubmit = async () => {
     setError(null);
 
+    if (!codigoCertificado.trim()) return setError('Ingresa el código del certificado.');
     if (!idCurso) return setError('Selecciona un curso.');
 
     if (modo === 'registrado' && !selectedEstudianteId) {
@@ -106,6 +113,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
 
     try {
       const payload: NuevoCertificadoPayload = {
+        codigo_certificado: codigoCertificado.trim(),
         id_curso: Number(idCurso),
         tipo_certificado: tipoCertificado.trim() || undefined,
         descripcion: descripcion.trim() || undefined,
@@ -113,6 +121,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
         fecha_inicio: fechaInicio || undefined,
         fecha_fin: fechaFin || undefined,
         fecha_emision: fechaEmision || undefined,
+        fecha_vencimiento: fechaVencimiento || undefined,
         calificacion_final: calificacionFinal === '' ? undefined : Number(calificacionFinal),
         email_destinatario: emailDestinatario.trim() || undefined,
       };
@@ -130,7 +139,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
         resetForm();
         onClose();
       } else {
-        setError('Error al procesar la solicitud.');
+        setError('Error al procesar la solicitud. Verifica que el código no esté repetido.');
       }
     } catch (err) {
       setError('Ocurrió un error inesperado.');
@@ -148,7 +157,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
       footer={
         <>
           <div className="flex items-center gap-2 text-slate-400 font-extrabold text-[10px] uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100/50 w-full md:w-auto justify-center md:justify-start md:mr-auto">
-            El código se genera automáticamente
+            El código debe ser único
           </div>
           <button
             onClick={handleSubmit}
@@ -174,13 +183,21 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
           <div className="w-16 h-16 bg-white rounded-[1.25rem] shadow-xl flex items-center justify-center text-sky-500 shrink-0 border border-slate-50">
             <IoRibbonOutline size={34} />
           </div>
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left flex-1">
             <h4 className="text-[9px] md:text-[10px] font-black text-sky-600 uppercase tracking-[0.3em] bg-sky-100 px-4 py-1 rounded-full border border-sky-200/50 w-fit mb-3 mx-auto md:mx-0">
               Emisión de Certificado
             </h4>
-            <p className="text-[12px] md:text-[13px] font-bold text-slate-400 leading-relaxed max-w-lg">
-              El código de certificado se genera automáticamente al confirmar.
+            <p className="text-[12px] md:text-[13px] font-bold text-slate-400 leading-relaxed max-w-lg mb-4">
+              Ingresa el código único con el que se identificará este certificado.
             </p>
+            <div className="max-w-sm mx-auto md:mx-0">
+              <InputComponent
+                label="Código del Certificado"
+                value={codigoCertificado}
+                onChange={(e) => setCodigoCertificado(e.target.value)}
+                placeholder="Ej: CERT-2026-0001"
+              />
+            </div>
           </div>
         </div>
 
@@ -305,7 +322,7 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
             className="h-24"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <InputComponent
               label="Fecha Inicio"
               type="date"
@@ -326,7 +343,23 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <InputComponent
+              label="Fecha de Vencimiento"
+              type="date"
+              value={fechaVencimiento}
+              onChange={(e) => setFechaVencimiento(e.target.value)}
+            />
+            <InputComponent
+              label="Email de Notificación"
+              type="email"
+              value={emailDestinatario}
+              onChange={(e) => setEmailDestinatario(e.target.value)}
+              placeholder="ejemplo@correo.com"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <InputComponent
               label="Horas"
               type="number"
@@ -342,13 +375,6 @@ export function AddCertificadoModal({ isOpen, onClose, cursos, estudiantes, onSa
               min="0"
               max="20"
               step="0.01"
-            />
-            <InputComponent
-              label="Email de Notificación"
-              type="email"
-              value={emailDestinatario}
-              onChange={(e) => setEmailDestinatario(e.target.value)}
-              placeholder="ejemplo@correo.com"
             />
           </div>
         </div>

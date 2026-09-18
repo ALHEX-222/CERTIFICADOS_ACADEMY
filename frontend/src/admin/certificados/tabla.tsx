@@ -19,6 +19,7 @@ import { InfoCertificadoModal } from './infoCertificados';
 import { AddCertificadoModal } from './agregarCertificados';
 import { EditCertificadoModal } from './editCertificados';
 import { CargaMasivaCertificadosModal } from './CargaMasivaCertificadosModal';
+import { DescargaCertificadosModal } from './DescargaCertificadosModal';
 import DeleteModal from '../components/DeleteModal';
 import { apiClient } from '../../services/apiClient';
 
@@ -26,6 +27,23 @@ function parseList<T>(j: any): T[] {
   if (Array.isArray(j)) return j;
   if (Array.isArray(j?.data)) return j.data;
   return [];
+}
+
+// El backend a veces devuelve nombre_estudiante/dni_estudiante/nombre_curso
+// como campos planos, y a veces anidados dentro de "estudiante" / "curso".
+// Esta función normaliza cualquiera de los dos formatos a los campos planos
+// que usa toda la UI (c.nombre_estudiante, c.dni_estudiante, c.nombre_curso).
+function normalizarCertificado(raw: any): Certificado {
+  const estudiante = raw?.estudiante ?? {};
+  const curso = raw?.curso ?? {};
+  return {
+    ...raw,
+    id_estudiante: raw?.id_estudiante ?? estudiante?.id_estudiante,
+    id_curso: raw?.id_curso ?? curso?.id_curso,
+    nombre_estudiante: raw?.nombre_estudiante ?? estudiante?.nombre_completo ?? '',
+    dni_estudiante: raw?.dni_estudiante ?? estudiante?.numero_documento ?? '',
+    nombre_curso: raw?.nombre_curso ?? curso?.nombre ?? '',
+  } as Certificado;
 }
 
 function formatearFechaSinTZ(
@@ -206,6 +224,7 @@ export function Certificados() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCargaMasivaOpen, setIsCargaMasivaOpen] = useState(false);
+  const [isDescargaOpen, setIsDescargaOpen] = useState(false);
   const [selected, setSelected] = useState<Certificado | null>(null);
   const [certToEdit, setCertToEdit] = useState<Certificado | null>(null);
 
@@ -254,10 +273,14 @@ export function Certificados() {
         },
       });
 
-      const response = result.data;
-      setItems(response?.data ?? []);
-      setTotal(response?.total ?? 0);
-      setLastPage(response?.lastPage ?? 1);
+      const raw = result.data;
+      // Soporta tanto { data: [...], total, lastPage } como un array plano [...]
+      const listaCruda: any[] = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+      const normalizados = listaCruda.map(normalizarCertificado);
+
+      setItems(normalizados);
+      setTotal(Array.isArray(raw) ? normalizados.length : raw?.total ?? normalizados.length);
+      setLastPage(Array.isArray(raw) ? 1 : raw?.lastPage ?? 1);
     } catch (err) {
       console.error(err);
     } finally {
@@ -321,7 +344,15 @@ export function Certificados() {
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setIsDescargaOpen(true)}
+            className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] hover:border-sky-400 hover:shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
+          >
+            <IoDownloadOutline size={18} />
+            Descargar Certificados
+          </button>
+
           <button
             onClick={() => setIsCargaMasivaOpen(true)}
             className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] hover:border-sky-400 hover:shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap"
@@ -628,6 +659,12 @@ export function Certificados() {
         isOpen={isCargaMasivaOpen}
         onClose={() => setIsCargaMasivaOpen(false)}
         onSuccess={fetchData}
+      />
+
+      <DescargaCertificadosModal
+        isOpen={isDescargaOpen}
+        onClose={() => setIsDescargaOpen(false)}
+        cursos={cursos}
       />
 
       <DeleteModal

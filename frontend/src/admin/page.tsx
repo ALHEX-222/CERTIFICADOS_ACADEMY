@@ -186,7 +186,7 @@ export default function AdminLayout() {
   const renderContent = () => {
     switch (activeSection) {
       case 'cursos':
-        return <Cursos rol={rol} />;
+        return <Cursos />;
 
       case 'certificados':
         return <Certificados />;
@@ -198,7 +198,7 @@ export default function AdminLayout() {
         return <ModelosCertificados />;
 
       default:
-        return <Cursos rol={rol} />;
+        return <Cursos />;
     }
   };
 
@@ -208,7 +208,6 @@ export default function AdminLayout() {
 
   const rolUsuario = Number(
   userData?.id_rol ||
-  userData?.user?.id_rol ||
   3
 );
 
@@ -291,7 +290,7 @@ export default function AdminLayout() {
 
                       <img
                         src="/images/logomatt.webp"
-                        alt="MIS Academy"
+                        alt="MATT INNOVA SOLUTIONS"
                         className="w-[105px] h-auto object-contain relative z-10 drop-shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
@@ -326,7 +325,7 @@ export default function AdminLayout() {
 
                 {showLabels && (
                   <div className="pt-2 text-[7px] uppercase tracking-[0.3em] text-white/20 font-black px-4 mb-2">
-                    Gestión Académica
+                    Gestión de certificados
                   </div>
                 )}
 
@@ -369,15 +368,9 @@ export default function AdminLayout() {
                     >
                       {(() => {
                         const imgPath =
-                          userData?.imagen_perfil ||
-                          userData?.user?.imagen_perfil ||
-                          userData?.usuario?.imagen_perfil;
+                          userData?.imagen_perfil;
 
-                        const nombre =
-                          userData?.nombre ||
-                          userData?.user?.nombre ||
-                          userData?.usuario?.nombre ||
-                          'A';
+                        const nombre = userData?.nombre || 'A';
 
                         const url = resolveAvatarUrl(imgPath);
 
@@ -473,9 +466,7 @@ export default function AdminLayout() {
               </h1>
 
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                <span className="text-sky-500">MIS Academy</span>
-
-                <span>/</span>
+                <span>Matt Innova Solutions/</span>
 
                 <span>{MENU_ITEMS.find((item) => item.key === activeSection)?.label || 'Cursos'}</span>
               </div>

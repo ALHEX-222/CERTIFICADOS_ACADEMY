@@ -57,50 +57,39 @@ export class CertificadosController {
     res.send(buffer);
   }
 
-  // Descarga múltiple: POST /certificados/descarga-multiple
-  // body: { ids: number[], id_modelo: number, modo: 'individual' | 'unico' }
-  @Post('descarga-multiple')
+  // Descarga múltiple: POST /certificados/descargar-masivo
+  // body: { ids: number[], id_modelo: number }
+  // Siempre devuelve un único PDF con una página por certificado.
+  @Post('descargar-masivo')
   async descargaMultiple(
-    @Body() dto: { ids: number[]; id_modelo: number; modo: 'individual' | 'unico' },
+    @Body() dto: { ids: number[]; id_modelo: number; modo?: string },
     @Res() res: Response,
   ) {
     if (!dto.ids?.length || !dto.id_modelo) {
       throw new BadRequestException('Debes indicar ids[] e id_modelo.');
     }
 
-    if (dto.modo === 'unico') {
-      const buffer = await this.certificadosService.generarPdfCombinado(
-        dto.ids,
-        dto.id_modelo,
-      );
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="certificados.pdf"`,
-      });
-      return res.send(buffer);
-    }
-
-    const buffer = await this.certificadosService.generarZipIndividuales(
+    const buffer = await this.certificadosService.generarPdfCombinado(
       dto.ids,
       dto.id_modelo,
     );
     res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="certificados.zip"`,
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="certificados.pdf"`,
     });
     res.send(buffer);
   }
 
   @Get()
-findAll(
-  @Query('page') page?: string,
-  @Query('perPage') perPage?: string,
-  @Query('busqueda') busqueda?: string,
-  @Query('tipo_certificado') tipo_certificado?: string,
-  @Query('cursoId') cursoId?: string,
-) {
-  return this.certificadosService.findAll();
-}
+  findAll(
+    @Query('page') page?: string,
+    @Query('perPage') perPage?: string,
+    @Query('busqueda') busqueda?: string,
+    @Query('tipo_certificado') tipo_certificado?: string,
+    @Query('cursoId') cursoId?: string,
+  ) {
+    return this.certificadosService.findAll();
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

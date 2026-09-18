@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
 import { AgregarModeloCertificadoModal } from './agregarModeloCertificados';
 import { EditModeloCertificadoModal } from './editModeloCertificados';
+import { DisenadorCamposModal } from './Disenadorcamposmodal';
 import DeleteModal from '../components/DeleteModal';
 import { apiClient } from '../../services/apiClient';
 import { resolveAvatarUrl } from '../../config/api';
@@ -27,6 +28,9 @@ export default function ModelosCertificados() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [modeloAEliminar, setModeloAEliminar] = useState<any | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Modelo cuyo diseñador de campos (posiciones sobre la plantilla) está abierto.
+  const [idModeloAConfigurar, setIdModeloAConfigurar] = useState<number | null>(null);
 
   const [busqueda, setBusqueda] = useState('');
   const [busquedaDebounced, setBusquedaDebounced] = useState('');
@@ -231,6 +235,13 @@ export default function ModelosCertificados() {
                     <td className="px-8 py-6 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button
+                          onClick={() => setIdModeloAConfigurar(m.id_modelo)}
+                          className="p-2.5 rounded-xl text-sky-500 hover:bg-sky-50 transition-all"
+                          title="Posicionar campos"
+                        >
+                          <FaMapMarkerAlt size={16} />
+                        </button>
+                        <button
                           onClick={() => {
                             setModeloAEditar(m);
                             setIsEditModalOpen(true);
@@ -277,6 +288,16 @@ export default function ModelosCertificados() {
           onSave={guardarEdicion}
         />
       )}
+
+      <DisenadorCamposModal
+        isOpen={idModeloAConfigurar != null}
+        idModelo={idModeloAConfigurar}
+        onClose={() => setIdModeloAConfigurar(null)}
+        onGuardado={() => {
+          showToast('✅ Posiciones de campos guardadas', 'success');
+          fetchModelos();
+        }}
+      />
 
       <DeleteModal
         isOpen={isDeleteModalOpen}
