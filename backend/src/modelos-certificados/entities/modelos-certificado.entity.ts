@@ -23,8 +23,7 @@ export class ModelosCertificado {
   @Column({ length: 20, default: 'horizontal' })
   orientacion: string;
 
-  // Posiciones de cada campo de texto sobre la imagen (para cuando se genere el PDF)
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   campos_config: Record<string, any>[];
 
   @Column({ length: 20, default: 'activo' })
